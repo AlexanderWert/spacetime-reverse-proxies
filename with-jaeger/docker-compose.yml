@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  firstapp:
+    build:
+      context: ../dummy-app
+      dockerfile: ./Dockerfile
+      args:
+        - JAVA_AGENT_VERSION=${JAVA_AGENT_VERSION}
+    image: with-jaeger_dummyapp_1
+    ports:
+      - "8091:8080"
+    environment:
+      - ELASTIC_APM_SERVICE_NAME=first-java-app
+      - ELASTIC_APM_SERVER_URLS
+      - ELASTIC_APM_SECRET_TOKEN
+      - ELASTIC_APM_USE_ELASTIC_TRACEPARENT_HEADER=false
+      - ELASTIC_APM_ENVIRONMENT=with-jaeger
+      - CONFIG_DOWNSTREAM_SERVICE_URL=nginx:81
+  dummyapp:
+    build:
+      context: ../dummy-app
+      dockerfile: ./Dockerfile
+      args:
+        - JAVA_AGENT_VERSION=${JAVA_AGENT_VERSION}
+    image: with-jaeger_dummyapp_1
+    ports:
+      - "8092:8080"
+    environment:
+      - ELASTIC_APM_SERVICE_NAME=dummy-java-app
+      - ELASTIC_APM_SERVER_URLS
+      - ELASTIC_APM_SECRET_TOKEN
+      - ELASTIC_APM_USE_ELASTIC_TRACEPARENT_HEADER=false
+      - ELASTIC_APM_ENVIRONMENT=with-jaeger
+      - CONFIG_DOWNSTREAM_SERVICE_URL=nginx:81
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: ./Dockerfile
+    image: with-jaeger_nginx_1
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/jaeger-config.json:/etc/jaeger-config.json
+    expose:
+      - "8081"
+    ports:
+      - "8081:81"
+    depends_on:
+      - jaeger-agent
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent
+    command: [ "--reporter.grpc.host-port=apm-server:14250" ]
+    ports:
+      - "6831:6831"
+    depends_on:
+      - apm-server
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:7.12.1
+    ports:
+      - "14250"
+      - "14268"
+    volumes:
+      - ./apm-server/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro

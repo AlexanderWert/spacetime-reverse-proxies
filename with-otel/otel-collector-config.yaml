@@ -1,0 +1,27 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  logging:
+    loglevel: debug
+
+  otlp:
+    endpoint: apm-server:8200
+    insecure: true
+
+processors:
+  batch:
+  resource:
+    attributes:
+      - key: service.name
+        value: nginx-proxy
+        action: insert
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [logging, otlp]
