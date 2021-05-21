@@ -13,6 +13,9 @@ exporters:
 
 processors:
   batch:
+  probabilistic_sampler:
+    hash_seed: 22
+    sampling_percentage: 100.0
   resource:
     attributes:
       - key: service.name
