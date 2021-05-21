@@ -18,6 +18,12 @@ processors:
       - key: service.name
         value: nginx-proxy
         action: insert
+      - key: telemetry.sdk.name
+        value: otel
+        action: insert
+      - key: telemetry.sdk.language
+        value: nginx
+        action: insert
 
 service:
   pipelines:
